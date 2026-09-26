@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <curl/curl.h>
+#include <sys/resource.h>
 struct MemoryStruct {
   char *memory;
   size_t size;
@@ -46,11 +47,14 @@ load_env(".env");
         fprintf(stderr, "openweather api key not found.\n");
         return 1;
     }
+
+  char city[100];
+  char url[512];
+  scanf("%99s", city);
+  snprintf(url, sizeof(url), "https://api.openweathermap.org/data/2.5/weather?q=%s&appid=%s&units=metric", city, api_key ); 
+  struct MemoryStruct chunk;
   CURL *curl;
   CURLcode result;
-
-  struct MemoryStruct chunk;
-
   result = curl_global_init(CURL_GLOBAL_ALL);
   if(result != CURLE_OK)
     return (int)result;
@@ -59,10 +63,6 @@ load_env(".env");
   chunk.size = 0;
   curl = curl_easy_init();
   if(curl) {
-char url[512];
-snprintf(url, sizeof(url),
-         "https://api.openweathermap.org/data/2.5/weather?q=novosibirsk&appid=%s&units=metric",
-         api_key);
 curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
@@ -75,13 +75,18 @@ curl_easy_setopt(curl, CURLOPT_URL, url);
     else {
       cJSON *json = cJSON_Parse(chunk.memory);
       if (json != NULL) {
-          cJSON *main = cJSON_GetObjectItemCaseSensitive(json, "main");
-              if (main != NULL) {
-                  cJSON *temp = cJSON_GetObjectItemCaseSensitive(main, "temp");
+          cJSON *mainf = cJSON_GetObjectItemCaseSensitive(json, "main");
+              if (mainf != NULL) {
+                  cJSON *temp = cJSON_GetObjectItemCaseSensitive(mainf, "temp");
+                  cJSON *flike = cJSON_GetObjectItemCaseSensitive(mainf, "feels_like");
                     if (cJSON_IsNumber(temp)) {
                       double fckng_temp = cJSON_GetNumberValue(temp);
                       printf("погода: %.0f°C\n", fckng_temp);
                     }
+                    if (cJSON_IsNumber(flike)) {
+                      double fcking_fl = cJSON_GetNumberValue(flike);
+                      printf("ощущается как: %.0f°C\n", fcking_fl);
+          }
         }
          cJSON_Delete(json);
       }
