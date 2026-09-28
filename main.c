@@ -81,11 +81,21 @@ curl_easy_setopt(curl, CURLOPT_URL, url);
                   cJSON *flike = cJSON_GetObjectItemCaseSensitive(mainf, "feels_like");
                     if (cJSON_IsNumber(temp)) {
                       double fckng_temp = cJSON_GetNumberValue(temp);
-                      printf("погода: %.0f°C\n", fckng_temp);
-                    }
+                      printf("погода: ");
+                      printf("\033[38;5;226m%.0f°C\n\033[0m", fckng_temp);}
                     if (cJSON_IsNumber(flike)) {
                       double fcking_fl = cJSON_GetNumberValue(flike);
-                      printf("ощущается как: %.0f°C\n", fcking_fl);
+                      printf("ощущается как: ");
+                      printf("\033[38;5;226m%.0f°C\n\033[0m", fcking_fl);
+          }
+          cJSON *windf = cJSON_GetObjectItemCaseSensitive(json, "wind");
+            if (windf != NULL) {
+            cJSON *speed = cJSON_GetObjectItemCaseSensitive(windf, "speed");
+              if (cJSON_IsNumber(speed)) {
+              double wind_speed = cJSON_GetNumberValue(speed);
+              printf("скорость ветра: ");
+              printf("\033[38;5;21m%.0f м/сек\n\033[0m", wind_speed);
+            }
           }
         }
          cJSON_Delete(json);
