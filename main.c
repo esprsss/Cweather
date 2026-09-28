@@ -40,18 +40,28 @@ void load_env(const char *filename) {
     }
     fclose(file);
 }
-int main() {
+int main(int argc, char *argv[]) {
+const char *unit_system = "metric";
+const char *temp_unit = "°C";
+const char *speed_unit = "m/s";
+const char *city;
+if (argc < 2) {
+    return 1;
+}
+city = argv[1];
+if (argc >= 3) {
+    unit_system = argv[2];
+}
+if (strcmp(unit_system, "imperial") == 0) {
+    temp_unit = "°F";
+    speed_unit = "mph";
+  }
 load_env(".env");
     const char *api_key = getenv("OPENWEATHER_API_KEY");
     if (!api_key) {
         fprintf(stderr, "openweather api key not found.\n");
         return 1;
     }
-
-  char city[100];
-  char url[512];
-  scanf("%99s", city);
-  snprintf(url, sizeof(url), "https://api.openweathermap.org/data/2.5/weather?q=%s&appid=%s&units=metric", city, api_key ); 
   struct MemoryStruct chunk;
   CURL *curl;
   CURLcode result;
@@ -62,7 +72,11 @@ load_env(".env");
   chunk.memory = malloc(1); 
   chunk.size = 0;
   curl = curl_easy_init();
-  if(curl) {
+   if(curl) {
+ char *escape_city = curl_easy_escape(curl, city, 0);
+  char url[512];
+  snprintf(url, sizeof(url), "https://api.openweathermap.org/data/2.5/weather?q=%s&appid=%s&units=%s", escape_city, api_key, unit_system );
+  curl_free(escape_city);
 curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
@@ -81,20 +95,20 @@ curl_easy_setopt(curl, CURLOPT_URL, url);
                   cJSON *flike = cJSON_GetObjectItemCaseSensitive(mainf, "feels_like");
                     if (cJSON_IsNumber(temp)) {
                       double fckng_temp = cJSON_GetNumberValue(temp);
-                      printf("погода: ");
-                      printf("\033[38;5;226m%.0f°C\n\033[0m", fckng_temp);}
+                      printf("weather: ");
+                      printf("\033[38;5;226m%.0f %s\n\033[0m", fckng_temp, temp_unit);}
                     if (cJSON_IsNumber(flike)) {
                       double fcking_fl = cJSON_GetNumberValue(flike);
-                      printf("ощущается как: ");
-                      printf("\033[38;5;226m%.0f°C\n\033[0m", fcking_fl);
+                      printf("feels like: ");
+                      printf("\033[38;5;226m%.0f %s\n\033[0m", fcking_fl, temp_unit);
           }
           cJSON *windf = cJSON_GetObjectItemCaseSensitive(json, "wind");
             if (windf != NULL) {
             cJSON *speed = cJSON_GetObjectItemCaseSensitive(windf, "speed");
               if (cJSON_IsNumber(speed)) {
               double wind_speed = cJSON_GetNumberValue(speed);
-              printf("скорость ветра: ");
-              printf("\033[38;5;21m%.0f м/сек\n\033[0m", wind_speed);
+              printf("wind speed: ");
+              printf("\033[38;5;21m%.0f %s\n\033[0m", wind_speed, speed_unit);
             }
           }
         }
